@@ -18,9 +18,9 @@ import json
 import os
 import time
 from pydub import AudioSegment
-from pydub.playback import play
 from pydub.utils import make_chunks
 import zenoh
+from subscriber import subscriber
 
 # --- Command line argument parsing --- --- --- --- --- ---
 parser = argparse.ArgumentParser(
@@ -73,16 +73,6 @@ audio_file = args.audio_file
 key = args.key
 value = args.value
 
-def subscriber(session, key):
-    print(f"Subscribing to '{key}'...")
-    sub = session.declare_subscriber(key, lambda sample: play(AudioSegment(data=sample.payload, sample_width=2, frame_rate=44100, channels=2)))
-    print("Press CTRL-C to quit...")
-    try:
-        while True:
-            time.sleep(1)
-    except KeyboardInterrupt:
-        pass
-    sub.undeclare()
 
 def main() -> None:
     # initiate logging
