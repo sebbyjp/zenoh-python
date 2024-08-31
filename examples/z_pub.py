@@ -16,7 +16,8 @@ import argparse
 import itertools
 import json
 import time
-
+from pydub import AudioSegment
+from pydub.playback import play
 import zenoh
 
 # --- Command line argument parsing --- --- --- --- --- ---
@@ -47,6 +48,10 @@ parser.add_argument("--value", "-v", dest="value",
                     help="The value to publish.")
 parser.add_argument("--iter", dest="iter", type=int,
                     help="How many puts to perform")
+parser.add_argument("--audio-file", "-a", dest="audio_file",
+                    metavar="FILE",
+                    type=str,
+                    help="The audio file to stream.")
 parser.add_argument("--config", "-c", dest="config",
                     metavar="FILE",
                     type=str,
@@ -60,6 +65,7 @@ if args.connect is not None:
     conf.insert_json5(zenoh.config.CONNECT_KEY, json.dumps(args.connect))
 if args.listen is not None:
     conf.insert_json5(zenoh.config.LISTEN_KEY, json.dumps(args.listen))
+audio_file = args.audio_file
 key = args.key
 value = args.value
 
@@ -73,11 +79,23 @@ def main() -> None:
     print(f"Declaring Publisher on '{key}'...")
     pub = session.declare_publisher(key)
 
+    if audio_file is None:
+        print("No audio file provided. Exiting...")
+        return
+
+    print("Loading audio file...")
+    audio = AudioSegment.from_file(audio_file)
+    chunk_size = 1000  # 1 second chunks
+
     print("Press CTRL-C to quit...")
     for idx in itertools.count() if args.iter is None else range(args.iter):
-        time.sleep(1)
-        buf = f"[{idx:4d}] {value}"
-        print(f"Putting Data ('{key}': '{buf}')...")
+        start = idx * chunk_size
+        end = start + chunk_size
+        if start >= len(audio):
+            break
+        chunk = audio[start:end]
+        buf = chunk.raw_data
+        print(f"Putting Audio Data Chunk {idx} ('{key}')...")
         pub.put(buf)
 
     pub.undeclare()
