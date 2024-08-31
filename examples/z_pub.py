@@ -54,10 +54,11 @@ parser.add_argument("--audio-file", "-a", dest="audio_file",
                     type=str,
                     help="The audio file to stream.",
                     default="/home/ubuntu/seb/audio/faster-whisper-server/faster_whisper_server/out0.wav")
-parser.add_argument("--config", "-c", dest="config",
-                    metavar="FILE",
+parser.add_argument("--mode", "-M", dest="operation_mode",
+                    choices=["pub", "sub"],
+                    default="pub",
                     type=str,
-                    help="A configuration file.")
+                    help="Operation mode: 'pub' for publisher, 'sub' for subscriber.")
 
 args = parser.parse_args()
 conf = zenoh.Config.from_file(args.config) if args.config is not None else zenoh.Config()
@@ -71,41 +72,16 @@ audio_file = args.audio_file
 key = args.key
 value = args.value
 
-def main() -> None:
-    # initiate logging
-    zenoh.init_logger()
-
-    print("Opening session...")
-    session = zenoh.open(conf)
-
-    print(f"Declaring Publisher on '{key}'...")
-    pub = session.declare_publisher(key)
-
-    if audio_file is None:
-        print("No audio file provided. Exiting...")
-        return
-
-    if not os.path.isfile(audio_file):
-        print(f"Audio file '{audio_file}' does not exist. Exiting...")
-        return
-
-    print(f"Loading audio file '{audio_file}'...")
-    audio = AudioSegment.from_file(audio_file)
-    chunk_size = 1000  # 1 second chunks
-
+def subscriber(session, key):
+    print(f"Subscribing to '{key}'...")
+    sub = session.declare_subscriber(key, lambda sample: play(AudioSegment(data=sample.payload, sample_width=2, frame_rate=44100, channels=2)))
     print("Press CTRL-C to quit...")
-    for idx in itertools.count() if args.iter is None else range(args.iter):
-        start = idx * chunk_size
-        end = start + chunk_size
-        if start >= len(audio):
-            break
-        chunk = audio[start:end]
-        buf = chunk.raw_data
-        print(f"Putting Audio Data Chunk {idx} ('{key}')... Length: {len(buf)} bytes")
-        pub.put(buf)
-
-    pub.undeclare()
-    session.close()
+    try:
+        while True:
+            time.sleep(1)
+    except KeyboardInterrupt:
+        pass
+    sub.undeclare()
 
 main()
 #
