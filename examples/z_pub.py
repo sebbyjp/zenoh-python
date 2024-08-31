@@ -20,7 +20,7 @@ import time
 from pydub import AudioSegment
 from pydub.utils import make_chunks
 import zenoh
-from subscriber import subscriber
+from .subscriber import subscriber
 
 # --- Command line argument parsing --- --- --- --- --- ---
 parser = argparse.ArgumentParser(
