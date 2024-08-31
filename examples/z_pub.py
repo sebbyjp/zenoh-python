@@ -1,6 +1,7 @@
 import argparse
 import json
 import time
+import threading
 from pydub import AudioSegment
 from pydub.playback import play
 import zenoh
@@ -51,9 +52,20 @@ def main() -> None:
 
     if args.mode == "pub":
         print(f"Publishing to '{key}'...")
-        while True:
-            # Here you would add the code to publish data
-            time.sleep(1)
+        def publish_loop():
+            while True:
+                # Here you would add the code to publish data
+                time.sleep(1)
+        
+        publish_thread = threading.Thread(target=publish_loop)
+        publish_thread.start()
+        
+        print("Press CTRL-C to quit...")
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
     else:
         print(f"Subscribing to '{key}'...")
         sub = session.declare_subscriber(key, lambda sample: play(AudioSegment(data=sample.payload, sample_width=2, frame_rate=44100, channels=2)))
