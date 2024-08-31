@@ -51,7 +51,8 @@ parser.add_argument("--iter", dest="iter", type=int,
 parser.add_argument("--audio-file", "-a", dest="audio_file",
                     metavar="FILE",
                     type=str,
-                    help="The audio file to stream.")
+                    help="The audio file to stream.",
+                    default="/home/ubuntu/seb/audio/faster-whisper-server/faster_whisper_server/out0.wav")
 parser.add_argument("--config", "-c", dest="config",
                     metavar="FILE",
                     type=str,
