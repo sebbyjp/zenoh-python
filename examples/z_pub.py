@@ -56,6 +56,10 @@ parser.add_argument("--mode", "-M", dest="operation_mode",
                     default="pub",
                     type=str,
                     help="Operation mode: 'pub' for publisher, 'sub' for subscriber.")
+parser.add_argument("--config", "-c", dest="config",
+                    metavar="FILE",
+                    type=str,
+                    help="A configuration file.")       
 
 args = parser.parse_args()
 conf = zenoh.Config.from_file(args.config) if args.config is not None else zenoh.Config()
