@@ -25,10 +25,6 @@ import zenoh
 parser = argparse.ArgumentParser(
     prog="z_pub",
     description="zenoh pub example")
-parser.add_argument("--mode", "-m", dest="mode",
-                    choices=["peer", "client"],
-                    type=str,
-                    help="The zenoh session mode.")
 parser.add_argument("--connect", "-e", dest="connect",
                     metavar="ENDPOINT",
                     action="append",
