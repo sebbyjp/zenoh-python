@@ -15,6 +15,7 @@
 import argparse
 import itertools
 import json
+import os
 import time
 from pydub import AudioSegment
 from pydub.playback import play
@@ -84,7 +85,11 @@ def main() -> None:
         print("No audio file provided. Exiting...")
         return
 
-    print("Loading audio file...")
+    if not os.path.isfile(audio_file):
+        print(f"Audio file '{audio_file}' does not exist. Exiting...")
+        return
+
+    print(f"Loading audio file '{audio_file}'...")
     audio = AudioSegment.from_file(audio_file)
     chunk_size = 1000  # 1 second chunks
 
@@ -96,7 +101,7 @@ def main() -> None:
             break
         chunk = audio[start:end]
         buf = chunk.raw_data
-        print(f"Putting Audio Data Chunk {idx} ('{key}')...")
+        print(f"Putting Audio Data Chunk {idx} ('{key}')... Length: {len(buf)} bytes")
         pub.put(buf)
 
     pub.undeclare()
