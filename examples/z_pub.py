@@ -79,6 +79,24 @@ def subscriber(session, key):
         pass
     sub.undeclare()
 
+def main() -> None:
+    # initiate logging
+    zenoh.init_logger()
+
+    print("Opening session...")
+    session = zenoh.open(conf)
+
+    if args.operation_mode == "pub":
+        print(f"Publishing to '{key}'...")
+        audio = AudioSegment.from_file(audio_file)
+        for chunk in make_chunks(audio, 1000):  # 1000 ms chunks
+            session.put(key, chunk.raw_data)
+            time.sleep(1)
+    elif args.operation_mode == "sub":
+        subscriber(session, key)
+
+    session.close()
+
 main()
 #
 # Copyright (c) 2022 ZettaScale Technology
