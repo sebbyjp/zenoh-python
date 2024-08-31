@@ -19,6 +19,7 @@ import os
 import time
 from pydub import AudioSegment
 from pydub.playback import play
+from pydub.utils import make_chunks
 import zenoh
 
 # --- Command line argument parsing --- --- --- --- --- ---
