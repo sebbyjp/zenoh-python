@@ -10,7 +10,7 @@ parser = argparse.ArgumentParser(
     prog="z_sub",
     description="zenoh sub example")
 parser.add_argument("--mode", "-m", dest="mode",
-                    choices=["peer", "client"],
+                    choices=["peer", "client", "pub"],
                     type=str,
                     help="The zenoh session mode.")
 parser.add_argument("--connect", "-e", dest="connect",
@@ -49,15 +49,21 @@ def main() -> None:
     print("Opening session...")
     session = zenoh.open(conf)
 
-    print(f"Subscribing to '{key}'...")
-    sub = session.declare_subscriber(key, lambda sample: play(AudioSegment(data=sample.payload, sample_width=2, frame_rate=44100, channels=2)))
-    print("Press CTRL-C to quit...")
-    try:
+    if args.mode == "pub":
+        print(f"Publishing to '{key}'...")
         while True:
+            # Here you would add the code to publish data
             time.sleep(1)
-    except KeyboardInterrupt:
-        pass
-    sub.undeclare()
+    else:
+        print(f"Subscribing to '{key}'...")
+        sub = session.declare_subscriber(key, lambda sample: play(AudioSegment(data=sample.payload, sample_width=2, frame_rate=44100, channels=2)))
+        print("Press CTRL-C to quit...")
+        try:
+            while True:
+                time.sleep(1)
+        except KeyboardInterrupt:
+            pass
+        sub.undeclare()
     session.close()
 
 main()
