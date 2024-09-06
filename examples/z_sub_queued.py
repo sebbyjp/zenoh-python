@@ -14,6 +14,7 @@
 
 import argparse
 import json
+<<<<<<< HEAD
 from threading import Thread
 import time
 
@@ -46,27 +47,84 @@ parser.add_argument("--config", "-c", dest="config",
                     metavar="FILE",
                     type=str,
                     help="A configuration file.")
+=======
+import time
+from threading import Thread
+
+import zenoh
+
+# --- Command line argument parsing --- --- --- --- --- ---
+parser = argparse.ArgumentParser(prog="z_sub", description="zenoh sub example")
+parser.add_argument(
+    "--mode",
+    "-m",
+    dest="mode",
+    choices=["peer", "client"],
+    type=str,
+    help="The zenoh session mode.",
+)
+parser.add_argument(
+    "--connect",
+    "-e",
+    dest="connect",
+    metavar="ENDPOINT",
+    action="append",
+    type=str,
+    help="Endpoints to connect to.",
+)
+parser.add_argument(
+    "--listen",
+    "-l",
+    dest="listen",
+    metavar="ENDPOINT",
+    action="append",
+    type=str,
+    help="Endpoints to listen on.",
+)
+parser.add_argument(
+    "--key",
+    "-k",
+    dest="key",
+    default="demo/example/**",
+    type=str,
+    help="The key expression to subscribe to.",
+)
+parser.add_argument(
+    "--config",
+    "-c",
+    dest="config",
+    metavar="FILE",
+    type=str,
+    help="A configuration file.",
+)
+>>>>>>> aa19e083bfe32cdae7545c9aea8e29ae6614b657
 
 args = parser.parse_args()
-conf = zenoh.Config.from_file(
-    args.config) if args.config is not None else zenoh.Config()
+conf = (
+    zenoh.Config.from_file(args.config) if args.config is not None else zenoh.Config()
+)
 if args.mode is not None:
-    conf.insert_json5(zenoh.config.MODE_KEY, json.dumps(args.mode))
+    conf.insert_json5("mode", json.dumps(args.mode))
 if args.connect is not None:
-    conf.insert_json5(zenoh.config.CONNECT_KEY, json.dumps(args.connect))
+    conf.insert_json5("connect/endpoints", json.dumps(args.connect))
 if args.listen is not None:
-    conf.insert_json5(zenoh.config.LISTEN_KEY, json.dumps(args.listen))
+    conf.insert_json5("listen/endpoints", json.dumps(args.listen))
 key = args.key
 
 # Zenoh code  --- --- --- --- --- --- --- --- --- --- ---
 
 
+<<<<<<< HEAD
 
 def main() -> None:
+=======
+def main():
+>>>>>>> aa19e083bfe32cdae7545c9aea8e29ae6614b657
     # initiate logging
-    zenoh.init_logger()
+    zenoh.try_init_log_from_env()
 
     print("Opening session...")
+<<<<<<< HEAD
     session = zenoh.open(conf)
 
     print(f"Declaring Subscriber on '{key}'...")
@@ -80,16 +138,28 @@ def main() -> None:
     def consumer() -> None:
         for sample in sub.receiver: # zenoh.Queue's receiver (the queue itself) is an iterator
             print(f">> [Subscriber] Received {sample.kind} ('{sample.key_expr}': '{sample.payload.decode('utf-8')}')")
+=======
+    with zenoh.open(conf) as session:
+        print("Declaring Subscriber on '{}'...".format(key))
+        with session.declare_subscriber(
+            key, reliability=zenoh.Reliability.RELIABLE
+        ) as sub:
+            print("Press CTRL-C to quit...")
+            for sample in sub:
+                print(
+                    f">> [Subscriber] Received {sample.kind} ('{sample.key_expr}': '{sample.payload.deserialize(str)}')"
+                )
+>>>>>>> aa19e083bfe32cdae7545c9aea8e29ae6614b657
 
-    t = Thread(target=consumer)
-    t.start()
-    print("Press CTRL-C to quit...")
-    while True:
-        time.sleep(1)
 
+<<<<<<< HEAD
     # Cleanup: note that even if you forget it, cleanup will happen automatically when
     # the reference counter reaches 0
     sub.undeclare()
     t.join()
     session.close()
 main()
+=======
+if __name__ == "__main__":
+    main()
+>>>>>>> aa19e083bfe32cdae7545c9aea8e29ae6614b657

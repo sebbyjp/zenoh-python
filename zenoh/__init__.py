@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2022 ZettaScale Technology
+# Copyright (c) 2024 ZettaScale Technology
 #
 # This program and the accompanying materials are made available under the
 # terms of the Eclipse Public License 2.0 which is available at
@@ -11,6 +11,7 @@
 # Contributors:
 #   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 #
+<<<<<<< HEAD
 from typing import Any
 
 from .closures import Closure, Handler, IClosure, IHandler, IntoClosure, IntoHandler, ListCollector, Queue
@@ -73,3 +74,6 @@ def scout(handler: IntoHandler[Hello, Any, Any] = None, what: str | None = None,
     if timeout:
         Timer(timeout, lambda: scout.stop()).start()
     return scout
+=======
+from .zenoh import *
+>>>>>>> aa19e083bfe32cdae7545c9aea8e29ae6614b657

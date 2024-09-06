@@ -18,6 +18,7 @@ import json
 import zenoh
 
 # --- Command line argument parsing --- --- --- --- --- ---
+<<<<<<< HEAD
 parser = argparse.ArgumentParser(
     prog="z_info",
     description="zenoh info example")
@@ -39,28 +40,68 @@ parser.add_argument("--config", "-c", dest="config",
                     metavar="FILE",
                     type=str,
                     help="A configuration file.")
+=======
+parser = argparse.ArgumentParser(prog="z_info", description="zenoh info example")
+parser.add_argument(
+    "--mode",
+    "-m",
+    dest="mode",
+    choices=["peer", "client"],
+    type=str,
+    help="The zenoh session mode.",
+)
+parser.add_argument(
+    "--connect",
+    "-e",
+    dest="connect",
+    metavar="ENDPOINT",
+    action="append",
+    type=str,
+    help="Endpoints to connect to.",
+)
+parser.add_argument(
+    "--listen",
+    "-l",
+    dest="listen",
+    metavar="ENDPOINT",
+    action="append",
+    type=str,
+    help="Endpoints to listen on.",
+)
+parser.add_argument(
+    "--config",
+    "-c",
+    dest="config",
+    metavar="FILE",
+    type=str,
+    help="A configuration file.",
+)
+>>>>>>> aa19e083bfe32cdae7545c9aea8e29ae6614b657
 
 args = parser.parse_args()
-conf = zenoh.Config.from_file(
-    args.config) if args.config is not None else zenoh.Config()
+conf = (
+    zenoh.Config.from_file(args.config) if args.config is not None else zenoh.Config()
+)
 if args.mode is not None:
-    conf.insert_json5(zenoh.config.MODE_KEY, json.dumps(args.mode))
+    conf.insert_json5("mode", json.dumps(args.mode))
 if args.connect is not None:
-    conf.insert_json5(zenoh.config.CONNECT_KEY, json.dumps(args.connect))
+    conf.insert_json5("connect/endpoints", json.dumps(args.connect))
 if args.listen is not None:
-    conf.insert_json5(zenoh.config.LISTEN_KEY, json.dumps(args.listen))
+    conf.insert_json5("listen/endpoints", json.dumps(args.listen))
+
+
 # Zenoh code  --- --- --- --- --- --- --- --- --- --- ---
 def main() -> None:
     # initiate logging
-    zenoh.init_logger()
+    zenoh.try_init_log_from_env()
 
     print("Opening session...")
-    session = zenoh.open(conf)
+    with zenoh.open(conf) as session:
+        info = session.info
+        print(f"zid: {info.zid()}")
+        print(f"routers: {info.routers_zid()}")
+        print(f"peers: {info.peers_zid()}")
 
-    info = session.info()
-    print(f"zid: {info.zid()}")
-    print(f"routers: {info.routers_zid()}")
-    print(f"peers: {info.peers_zid()}")
-    session.close()
 
-main()
+if __name__ == "__main__":
+    main()

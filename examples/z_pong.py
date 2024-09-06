@@ -54,6 +54,14 @@ parser.add_argument(
     type=str,
     help="A configuration file.",
 )
+parser.add_argument(
+    "--express",
+    dest="express",
+    metavar="EXPRESS",
+    type=bool,
+    default=False,
+    help="Express publishing",
+)
 
 args = parser.parse_args()
 conf = (
@@ -70,9 +78,10 @@ if args.listen is not None:
 # Zenoh code  --- --- --- --- --- --- --- --- --- --- ---
 def main() -> None:
     # initiate logging
-    zenoh.init_logger()
+    zenoh.try_init_log_from_env()
 
     print("Opening session...")
+<<<<<<< HEAD
     session = zenoh.open(conf)
 
     pub = session.declare_publisher(
@@ -80,10 +89,20 @@ def main() -> None:
         congestion_control=zenoh.CongestionControl.BLOCK(),
     )
     session.declare_subscriber("test/ping", lambda s: pub.put(s.payload))
+=======
+    with zenoh.open(conf) as session:
+        pub = session.declare_publisher(
+            "test/pong",
+            congestion_control=zenoh.CongestionControl.BLOCK,
+            express=args.express,
+        )
+        session.declare_subscriber("test/ping", lambda s: pub.put(s.payload))
+>>>>>>> aa19e083bfe32cdae7545c9aea8e29ae6614b657
 
-    print("Press CTRL-C to quit...")
-    while True:
-        time.sleep(1)
+        print("Press CTRL-C to quit...")
+        while True:
+            time.sleep(1)
 
 
-main()
+if __name__ == "__main__":
+    main()
