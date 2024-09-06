@@ -12,41 +12,40 @@
 #   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 #
 
-import sys
-import time
-from datetime import datetime
 import argparse
 import json
-import zenoh
 from threading import Thread
-from zenoh import Reliability, Sample
+import time
+
+import zenoh
+from zenoh import Reliability
 
 # --- Command line argument parsing --- --- --- --- --- ---
 parser = argparse.ArgumentParser(
-    prog='z_sub',
-    description='zenoh sub example')
-parser.add_argument('--mode', '-m', dest='mode',
-                    choices=['peer', 'client'],
+    prog="z_sub",
+    description="zenoh sub example")
+parser.add_argument("--mode", "-m", dest="mode",
+                    choices=["peer", "client"],
                     type=str,
-                    help='The zenoh session mode.')
-parser.add_argument('--connect', '-e', dest='connect',
-                    metavar='ENDPOINT',
-                    action='append',
+                    help="The zenoh session mode.")
+parser.add_argument("--connect", "-e", dest="connect",
+                    metavar="ENDPOINT",
+                    action="append",
                     type=str,
-                    help='Endpoints to connect to.')
-parser.add_argument('--listen', '-l', dest='listen',
-                    metavar='ENDPOINT',
-                    action='append',
+                    help="Endpoints to connect to.")
+parser.add_argument("--listen", "-l", dest="listen",
+                    metavar="ENDPOINT",
+                    action="append",
                     type=str,
-                    help='Endpoints to listen on.')
-parser.add_argument('--key', '-k', dest='key',
-                    default='demo/example/**',
+                    help="Endpoints to listen on.")
+parser.add_argument("--key", "-k", dest="key",
+                    default="demo/example/**",
                     type=str,
-                    help='The key expression to subscribe to.')
-parser.add_argument('--config', '-c', dest='config',
-                    metavar='FILE',
+                    help="The key expression to subscribe to.")
+parser.add_argument("--config", "-c", dest="config",
+                    metavar="FILE",
                     type=str,
-                    help='A configuration file.')
+                    help="A configuration file.")
 
 args = parser.parse_args()
 conf = zenoh.Config.from_file(
@@ -63,14 +62,14 @@ key = args.key
 
 
 
-def main():
+def main() -> None:
     # initiate logging
     zenoh.init_logger()
 
     print("Opening session...")
     session = zenoh.open(conf)
 
-    print("Declaring Subscriber on '{}'...".format(key))
+    print(f"Declaring Subscriber on '{key}'...")
 
 
     # WARNING, you MUST store the return value in order for the subscription to work!!
@@ -78,7 +77,7 @@ def main():
     # will be immediately undeclared.
     sub = session.declare_subscriber(key, zenoh.Queue(), reliability=Reliability.RELIABLE())
 
-    def consumer():
+    def consumer() -> None:
         for sample in sub.receiver: # zenoh.Queue's receiver (the queue itself) is an iterator
             print(f">> [Subscriber] Received {sample.kind} ('{sample.key_expr}': '{sample.payload.decode('utf-8')}')")
 
@@ -88,7 +87,7 @@ def main():
     while True:
         time.sleep(1)
 
-    # Cleanup: note that even if you forget it, cleanup will happen automatically when 
+    # Cleanup: note that even if you forget it, cleanup will happen automatically when
     # the reference counter reaches 0
     sub.undeclare()
     t.join()

@@ -68,7 +68,7 @@ if args.listen is not None:
 
 
 # Zenoh code  --- --- --- --- --- --- --- --- --- --- ---
-def main():
+def main() -> None:
     # initiate logging
     zenoh.init_logger()
 
@@ -79,7 +79,7 @@ def main():
         "test/pong",
         congestion_control=zenoh.CongestionControl.BLOCK(),
     )
-    sub = session.declare_subscriber("test/ping", lambda s: pub.put(s.payload))
+    session.declare_subscriber("test/ping", lambda s: pub.put(s.payload))
 
     print("Press CTRL-C to quit...")
     while True:

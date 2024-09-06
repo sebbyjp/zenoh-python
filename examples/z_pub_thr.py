@@ -12,38 +12,37 @@
 #   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 #
 
-import sys
-import time
 import argparse
 import json
+
 import zenoh
-from zenoh import config, CongestionControl, Value
+from zenoh import CongestionControl, Value
 
 # --- Command line argument parsing --- --- --- --- --- ---
 parser = argparse.ArgumentParser(
-    prog='z_pub_thr',
-    description='zenoh throughput pub example')
-parser.add_argument('--mode', '-m', dest='mode',
-                    choices=['peer', 'client'],
+    prog="z_pub_thr",
+    description="zenoh throughput pub example")
+parser.add_argument("--mode", "-m", dest="mode",
+                    choices=["peer", "client"],
                     type=str,
-                    help='The zenoh session mode.')
-parser.add_argument('--connect', '-e', dest='connect',
-                    metavar='ENDPOINT',
-                    action='append',
+                    help="The zenoh session mode.")
+parser.add_argument("--connect", "-e", dest="connect",
+                    metavar="ENDPOINT",
+                    action="append",
                     type=str,
-                    help='Endpoints to connect to.')
-parser.add_argument('--listen', '-l', dest='listen',
-                    metavar='ENDPOINT',
-                    action='append',
+                    help="Endpoints to connect to.")
+parser.add_argument("--listen", "-l", dest="listen",
+                    metavar="ENDPOINT",
+                    action="append",
                     type=str,
-                    help='Endpoints to listen on.')
-parser.add_argument('payload_size',
+                    help="Endpoints to listen on.")
+parser.add_argument("payload_size",
                     type=int,
-                    help='Sets the size of the payload to publish.')
-parser.add_argument('--config', '-c', dest='config',
-                    metavar='FILE',
+                    help="Sets the size of the payload to publish.")
+parser.add_argument("--config", "-c", dest="config",
+                    metavar="FILE",
                     type=str,
-                    help='A configuration file.')
+                    help="A configuration file.")
 
 args = parser.parse_args()
 conf = zenoh.Config.from_file(args.config) if args.config is not None else zenoh.Config()
@@ -56,18 +55,18 @@ if args.listen is not None:
 size = args.payload_size
 
 # Zenoh code  --- --- --- --- --- --- --- --- --- --- ---
-def main():
+def main() -> None:
     # initiate logging
     zenoh.init_logger()
 
     data = bytearray()
-    for i in range(0, size):
+    for i in range(size):
         data.append(i % 10)
     data = Value(bytes(data))
     congestion_control = CongestionControl.BLOCK()
 
     session = zenoh.open(conf)
-    pub = session.declare_publisher('test/thr', congestion_control=congestion_control)
+    pub = session.declare_publisher("test/thr", congestion_control=congestion_control)
 
     print("Press CTRL-C to quit...")
     while True:

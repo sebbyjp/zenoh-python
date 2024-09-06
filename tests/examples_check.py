@@ -9,10 +9,10 @@
 
 # Contributors:
 #   ZettaScale Zenoh team, <zenoh@zettascale.tech>
-# 
-from os import path, getpgid, killpg
+#
+from os import getpgid, killpg, path
 from signal import SIGINT
-from subprocess import Popen, PIPE
+from subprocess import PIPE, Popen
 import time
 
 examples = path.realpath(__file__).split("/tests")[0]+"/examples/"
@@ -31,7 +31,7 @@ class Pyrun:
 		self.end = None
 		self._stdouts = []
 		self._stderrs = []
-	def dbg(self):
+	def dbg(self) -> None:
 		self.wait()
 		print(f"{self.name} stdout:")
 		print(f"{tab}{tab.join(self.stdout)}")
@@ -52,17 +52,17 @@ class Pyrun:
 		if self.end is None:
 			self.end = time.time()
 		return code
-	def interrupt(self):
+	def interrupt(self) -> None:
 		# send SIGINT to process group
 		pgid = getpgid(self.process.pid)
 		killpg(pgid, SIGINT)
 	@property
 	def stdout(self):
-		self._stdouts.extend(line.decode('utf8') for line in self.process.stdout.readlines())
+		self._stdouts.extend(line.decode("utf8") for line in self.process.stdout.readlines())
 		return self._stdouts
 	@property
 	def stderr(self):
-		self._stderrs.extend(line.decode('utf8') for line in self.process.stderr.readlines())
+		self._stderrs.extend(line.decode("utf8") for line in self.process.stderr.readlines())
 		return self._stderrs
 	@property
 	def time(self):
@@ -99,9 +99,9 @@ if pull.status(KILL):
 	pull.dbg()
 	errors.append(pull.status(KILL))
 subout = "".join(pull.stdout)
-if not ("Received PUT ('demo/example/zenoh-python-put': 'Put from Python!')" in subout):
+if "Received PUT ('demo/example/zenoh-python-put': 'Put from Python!')" not in subout:
 	errors.append("z_pull didn't catch put")
-if not ("Received PUT ('demo/example/zenoh-python-pub': '[   1] Pub from Python!')" in subout):
+if "Received PUT ('demo/example/zenoh-python-pub': '[   1] Pub from Python!')" not in subout:
 	errors.append("z_pull didn't catch second z_pub")
 if any(("z_pull" in error) for error in errors):
 	pull.dbg()
@@ -112,7 +112,7 @@ get = Pyrun("z_get.py", ["-s=demo/example/zenoh-python-queryable"])
 if get.status():
 	get.dbg()
 	errors.append(get.status())
-if not ("Received ('demo/example/zenoh-python-queryable': 'Queryable from Python!')" in "".join(get.stdout)):
+if "Received ('demo/example/zenoh-python-queryable': 'Queryable from Python!')" not in "".join(get.stdout):
 	get.dbg()
 	queryable.dbg()
 	errors.append("z_get didn't get a response from z_queryable")
@@ -122,7 +122,7 @@ if queryable.status(KILL):
 	queryable.dbg()
 	errors.append(queryable.status(KILL))
 queryableout = "".join(queryable.stdout)
-if not ("Received Query 'demo/example/zenoh-python-queryable'" in queryableout):
+if "Received Query 'demo/example/zenoh-python-queryable'" not in queryableout:
 	errors.append("z_queryable didn't catch query")
 if any(("z_queryable" in error) for error in errors):
 	queryable.dbg()
@@ -132,7 +132,7 @@ get = Pyrun("z_get.py", ["-s=demo/example/zenoh-python-put"])
 if get.status():
 	get.dbg()
 	errors.append(get.status())
-if not ("Received ('demo/example/zenoh-python-put': 'Put from Python!')" in "".join(get.stdout)):
+if "Received ('demo/example/zenoh-python-put': 'Put from Python!')" not in "".join(get.stdout):
 	get.dbg()
 	errors.append("z_get didn't get a response from z_storage about put")
 if any(("z_get" in error) for error in errors):
@@ -160,11 +160,11 @@ if sub.status(KILL):
 	sub.dbg()
 	errors.append(sub.status(KILL))
 subout = "".join(sub.stdout)
-if not ("Received PUT ('demo/example/zenoh-python-put': 'Put from Python!')" in subout):
+if "Received PUT ('demo/example/zenoh-python-put': 'Put from Python!')" not in subout:
 	errors.append("z_sub didn't catch put")
-if not ("Received PUT ('demo/example/zenoh-python-pub': '[   1] Pub from Python!')" in subout):
+if "Received PUT ('demo/example/zenoh-python-pub': '[   1] Pub from Python!')" not in subout:
 	errors.append("z_sub didn't catch second z_pub")
-if not ("Received DELETE ('demo/example/zenoh-python-put': '')" in subout):
+if "Received DELETE ('demo/example/zenoh-python-put': '')" not in subout:
 	errors.append("z_sub didn't catch delete")
 if any(("z_sub" in error) for error in errors):
 	sub.dbg()
@@ -174,13 +174,13 @@ if storage.status(KILL):
 	storage.dbg()
 	errors.append(storage.status(KILL))
 storageout = "".join(storage.stdout)
-if not ("Received PUT ('demo/example/zenoh-python-put': 'Put from Python!')" in storageout):
+if "Received PUT ('demo/example/zenoh-python-put': 'Put from Python!')" not in storageout:
 	errors.append("z_storage didn't catch put")
-if not ("Received PUT ('demo/example/zenoh-python-pub': '[   1] Pub from Python!')" in storageout):
+if "Received PUT ('demo/example/zenoh-python-pub': '[   1] Pub from Python!')" not in storageout:
 	errors.append("z_storage didn't catch second z_pub")
-if not ("Received DELETE ('demo/example/zenoh-python-put': '')" in storageout):
+if "Received DELETE ('demo/example/zenoh-python-put': '')" not in storageout:
 	errors.append("z_storage didn't catch delete")
-if not ("Received Query 'demo/example/zenoh-python-put'" in storageout):
+if "Received Query 'demo/example/zenoh-python-put'" not in storageout:
 	errors.append("z_storage didn't catch query")
 if any(("z_storage" in error) for error in errors):
 	storage.dbg()

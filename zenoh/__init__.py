@@ -11,19 +11,21 @@
 # Contributors:
 #   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 #
-from .zenoh import init_logger, scout as _scout
-from .keyexpr import IntoKeyExpr, IntoSelector, KeyExpr, Selector
-from .config import Config
-from .session import Session, Publisher, Subscriber, PullSubscriber, Info
-from .enums import CongestionControl, Encoding, Priority, QueryConsolidation, QueryTarget, Reliability, SampleKind
-from .value import Hello, Value, IntoValue, IValue, Sample, IntoSample, ZenohId, Timestamp, Reply
-from .closures import Closure, IClosure, IntoClosure, Handler, IHandler, IntoHandler, ListCollector, Queue
-from .queryable import Queryable, Query
 from typing import Any
 
+from .closures import Closure, Handler, IClosure, IHandler, IntoClosure, IntoHandler, ListCollector, Queue
+from .config import Config
+from .enums import CongestionControl, Encoding, Priority, QueryConsolidation, QueryTarget, Reliability, SampleKind
+from .keyexpr import IntoKeyExpr, IntoSelector, KeyExpr, Selector
+from .queryable import Query, Queryable
+from .session import Info, Publisher, PullSubscriber, Session, Subscriber
+from .value import Hello, IntoSample, IntoValue, IValue, Reply, Sample, Timestamp, Value, ZenohId
+from .zenoh import init_logger
+from .zenoh import scout as _scout
+
+
 def open(*args, **kwargs):
-    """
-    Open a Zenoh session.
+    """Open a Zenoh session.
 
     :param config: The configuration of the Zenoh session
     :type config: Config
@@ -37,16 +39,15 @@ def open(*args, **kwargs):
     return Session(*args, **kwargs)
 
 class Scout:
-    def __init__(self, inner, receiver):
+    def __init__(self, inner, receiver) -> None:
         self._inner_ = inner
         self.receiver = receiver
-    
-    def stop(self):
+
+    def stop(self) -> None:
         self._inner_ = None
 
-def scout(handler: IntoHandler[Hello, Any, Any] = None, what: str = None, config: Config = None, timeout=None):
-    """
-    Scout for routers and/or peers.
+def scout(handler: IntoHandler[Hello, Any, Any] = None, what: str | None = None, config: Config = None, timeout=None):
+    """Scout for routers and/or peers.
 
     This spawns a task that periodically sends scout messages for a specified duration and returns
     a list of received :class:`Hello` messages.

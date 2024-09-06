@@ -12,43 +12,43 @@
 #   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 #
 
-import sys
-import time
 import argparse
 import json
+import time
+
 import zenoh
-from zenoh import Reliability, SampleKind, Query, Sample, KeyExpr
+from zenoh import Query, Reliability, Sample, SampleKind
 
 # --- Command line argument parsing --- --- --- --- --- ---
 parser = argparse.ArgumentParser(
-    prog='z_storage',
-    description='zenoh storage example')
-parser.add_argument('--mode', '-m', dest='mode',
-                    choices=['peer', 'client'],
+    prog="z_storage",
+    description="zenoh storage example")
+parser.add_argument("--mode", "-m", dest="mode",
+                    choices=["peer", "client"],
                     type=str,
-                    help='The zenoh session mode.')
-parser.add_argument('--connect', '-e', dest='connect',
-                    metavar='ENDPOINT',
-                    action='append',
+                    help="The zenoh session mode.")
+parser.add_argument("--connect", "-e", dest="connect",
+                    metavar="ENDPOINT",
+                    action="append",
                     type=str,
-                    help='Endpoints to connect to.')
-parser.add_argument('--listen', '-l', dest='listen',
-                    metavar='ENDPOINT',
-                    action='append',
+                    help="Endpoints to connect to.")
+parser.add_argument("--listen", "-l", dest="listen",
+                    metavar="ENDPOINT",
+                    action="append",
                     type=str,
-                    help='Endpoints to listen on.')
-parser.add_argument('--key', '-k', dest='key',
-                    default='demo/example/**',
+                    help="Endpoints to listen on.")
+parser.add_argument("--key", "-k", dest="key",
+                    default="demo/example/**",
                     type=str,
-                    help='The key expression matching resources to store.')
-parser.add_argument('--complete', dest='complete',
+                    help="The key expression matching resources to store.")
+parser.add_argument("--complete", dest="complete",
                     default=False,
-                    action='store_true',
-                    help='Declare the storage as complete w.r.t. the key expression.')
-parser.add_argument('--config', '-c', dest='config',
-                    metavar='FILE',
+                    action="store_true",
+                    help="Declare the storage as complete w.r.t. the key expression.")
+parser.add_argument("--config", "-c", dest="config",
+                    metavar="FILE",
                     type=str,
-                    help='A configuration file.')
+                    help="A configuration file.")
 
 args = parser.parse_args()
 conf = zenoh.Config.from_file(
@@ -67,7 +67,7 @@ complete = args.complete
 store = {}
 
 
-def listener(sample: Sample):
+def listener(sample: Sample) -> None:
     print(">> [Subscriber] Received {} ('{}': '{}')"
           .format(sample.kind, sample.key_expr, sample.payload.decode("utf-8")))
     if sample.kind == SampleKind.DELETE():
@@ -76,26 +76,25 @@ def listener(sample: Sample):
         store[sample.key_expr] = sample
 
 
-def query_handler(query: Query):
-    print(">> [Queryable ] Received Query '{}'".format(query.selector))
-    replies = []
+def query_handler(query: Query) -> None:
+    print(f">> [Queryable ] Received Query '{query.selector}'")
     for stored_name, sample in store.items():
         if query.key_expr.intersects(stored_name):
             query.reply(sample)
 
 
-def main():
+def main() -> None:
     # initiate logging
     zenoh.init_logger()
 
     print("Opening session...")
     session = zenoh.open(conf)
 
-    print("Declaring Subscriber on '{}'...".format(key))
+    print(f"Declaring Subscriber on '{key}'...")
     sub = session.declare_subscriber(
         key, listener, reliability=Reliability.RELIABLE())
 
-    print("Declaring Queryable on '{}'...".format(key))
+    print(f"Declaring Queryable on '{key}'...")
     queryable = session.declare_queryable(key, query_handler, complete)
 
     print("Press CTRL-C to quit...")

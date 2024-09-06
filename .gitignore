@@ -38,3 +38,4 @@ docs/_*
 
 **/pycache
 **/__pycache__
+.aider*

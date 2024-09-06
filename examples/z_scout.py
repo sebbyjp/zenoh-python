@@ -14,7 +14,8 @@
 
 import zenoh
 
-def main():
+
+def main() -> None:
     # initiate logging
     zenoh.init_logger()
 

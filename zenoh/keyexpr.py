@@ -11,24 +11,24 @@
 # Contributors:
 #   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 #
-from typing import Union, Dict
+from typing import Union
+
 from .zenoh import _KeyExpr, _Selector
 
-IntoKeyExpr = Union['KeyExpr', _KeyExpr, str]
+IntoKeyExpr = Union["KeyExpr", _KeyExpr, str]
 
 class KeyExpr(_KeyExpr):
-    """
-    Zenoh's address space is designed around keys which serve as the names of ressources.
+    """Zenoh's address space is designed around keys which serve as the names of ressources.
 
     Keys are slash-separated lists of non-empty UTF8 strings. They may not contain the following characters: ``$*#?``.
-    
+
     Zenoh's operations are executed on key expressions, a small language that allows the definition
     of sets of keys via the use of wildcards:
 
      - ``*`` is the single-chunk wildcard, and will match any chunk: ``a/*/c`` will match ``a/b/c``, ``a/hello/c``, etc...
      - ``**`` is the 0 or more chunks wildcard: ``a/**/c`` matches ``a/c``, ``a/b/c``, ``a/b/hello/c``, etc...
      - ``$*`` is the subchunk wildcard, it will match any amount of non-/ characters: ``a/b$*`` matches ``a/b``, ``a/because``, ``a/blue``... but not ``a/c`` nor ``a/blue/c``
-    
+
     To allow for better performance and gain the property that two key expressions define the same
     set if and only if they are the same string, the rules of canon form are mandatory for a key
     expression to be propagated by a Zenoh network:
@@ -41,9 +41,9 @@ class KeyExpr(_KeyExpr):
 
     A KeyExpr is a string that has been validated to be a valid Key Expression.
     """
+
     def __new__(cls, expr: IntoKeyExpr):
-        """
-        The default constructor for KeyExpr will ensure that the passed expression is valid.
+        """The default constructor for KeyExpr will ensure that the passed expression is valid.
         It won't however try to correct expressions that aren't canon.
 
         You may use ``KeyExpr.autocanonize(expr)`` instead if you are unsure if the expression
@@ -57,14 +57,13 @@ class KeyExpr(_KeyExpr):
             return _KeyExpr.__new__(cls, expr)
         else:
             return _KeyExpr.__new__(cls, _KeyExpr.new(expr))
-    
-    def _upgrade_(this: _KeyExpr) -> 'KeyExpr':
+
+    def _upgrade_(self: _KeyExpr) -> "KeyExpr":
         return _KeyExpr.__new__(KeyExpr, expr)
 
     @staticmethod
-    def autocanonize(expr: str) -> 'KeyExpr':
-        """
-        This alternative constructor for key expressions will attempt to canonize the passed
+    def autocanonize(expr: str) -> "KeyExpr":
+        """This alternative constructor for key expressions will attempt to canonize the passed
         expression before checking if it is valid.
 
         Raises a zenoh.ZError exception if ``expr`` is not a valid key expression.
@@ -74,51 +73,43 @@ class KeyExpr(_KeyExpr):
         else:
             e = _KeyExpr.autocanonize(expr)
             return KeyExpr(e.as_str())
-    
+
     def intersects(self, other: IntoKeyExpr) -> bool:
-        """
-        This method returns ``True`` if there exists at least one key that belongs to both sets
-        defined by ``self`` and ``other``. 
+        """This method returns ``True`` if there exists at least one key that belongs to both sets
+        defined by ``self`` and ``other``.
         """
         return super().intersects(KeyExpr(other))
-    
+
     def includes(self, other: IntoKeyExpr) -> bool:
-        """
-        This method returns ``True`` if all of the keys defined by ``other`` also belong to the set
+        """This method returns ``True`` if all of the keys defined by ``other`` also belong to the set
         defined by ``self``.
         """
         return super().includes(KeyExpr(other))
-    
-    def undeclare(self, session: 'Session'):
-        """
-        Undeclares a key expression previously declared on the session.
-        """
+
+    def undeclare(self, session: "Session") -> None:
+        """Undeclares a key expression previously declared on the session."""
         super().undeclare(session)
-    
+
     def __eq__(self, other: IntoKeyExpr) -> bool:
-        """
-        Corresponds to set equality.
-        """
+        """Corresponds to set equality."""
         return super().__eq__(KeyExpr(other))
-    
-    def __truediv__(self, other: IntoKeyExpr) -> 'KeyExpr':
-        """
-        Joins two key expressions with a ``/``.
+
+    def __truediv__(self, other: IntoKeyExpr) -> "KeyExpr":
+        """Joins two key expressions with a ``/``.
 
         Raises a zenoh.ZError exception if ``other`` is not a valid key expression.
         """
         return KeyExpr.autocanonize(f"{self}/{other}")
-    
-    def __str__(self):
+
+    def __str__(self) -> str:
         return super().__str__()
-    
+
     def __hash__(self):
         return super().__hash__()
 
-IntoSelector = Union['Selector', _Selector, IntoKeyExpr]
+IntoSelector = Union["Selector", _Selector, IntoKeyExpr]
 class Selector(_Selector):
-    """
-    A selector is the combination of a [Key Expression](crate::prelude::KeyExpr), which defines the
+    """A selector is the combination of a [Key Expression](crate::prelude::KeyExpr), which defines the
     set of keys that are relevant to an operation, and a ``parameters``, a set of key-value pairs
     with a few uses:
 
@@ -155,6 +146,7 @@ class Selector(_Selector):
        this key to be treated as a predicate that the value should fulfill before being returned.
        A DSL will be designed by the Zenoh team to express these predicates.
     """
+
     def __new__(cls, selector: IntoSelector):
         if isinstance(selector, Selector):
             return selector
@@ -162,27 +154,26 @@ class Selector(_Selector):
             return Selector._upgrade_(selector)
         return Selector._upgrade_(super().new(str(selector)))
     @staticmethod
-    def _upgrade_(this: _Selector) -> 'Selector':
+    def _upgrade_(this: _Selector) -> "Selector":
         return _Selector.__new__(Selector, this)
     @property
     def key_expr(self) -> KeyExpr:
-        "The key expression part of the selector."
+        """The key expression part of the selector."""
         return KeyExpr(super().key_expr)
     @property
     def parameters(self):
-        "The value selector part of the selector."
+        """The value selector part of the selector."""
         return super().parameters
     @parameters.setter
-    def set_parameters(self, parameters: str):
+    def set_parameters(self, parameters: str) -> None:
         super().parameters = parameters
-    def decode_parameters(self) -> Dict[str, str]:
-        """
-        Decodes the value selector part of the selector.
+    def decode_parameters(self) -> dict[str, str]:
+        """Decodes the value selector part of the selector.
 
         Raises a ZError if some keys were duplicated: duplicated keys are considered undefined behaviour,
         but we encourage you to refuse to process incoming messages with duplicated keys, as they might be
         attempting to use HTTP Parameter Pollution like exploits.
         """
         return super().decode_parameters()
-    def __str__(self):
+    def __str__(self) -> str:
         return super().__str__()

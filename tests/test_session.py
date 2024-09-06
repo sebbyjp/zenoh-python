@@ -1,40 +1,40 @@
-import zenoh
 import json
-from zenoh import Session, Query, Sample, Priority, CongestionControl
-from typing import List, Tuple, Optional
 import time
 
+import zenoh
+from zenoh import CongestionControl, Priority, Query, Sample, Session
+
 SLEEP = 1
-MSG_COUNT = 1_000;
-MSG_SIZE = [1_024, 131_072];
+MSG_COUNT = 1_000
+MSG_SIZE = [1_024, 131_072]
 
 
-def open_session(endpoints: List[str]) -> Tuple[Session, Session]:
+def open_session(endpoints: list[str]) -> tuple[Session, Session]:
     # listen peer
     conf = zenoh.Config()
     conf.insert_json5("listen/endpoints", json.dumps(endpoints))
     conf.insert_json5("scouting/multicast/enabled", "false")
-    print("[  ][01a] Opening peer01 session");
+    print("[  ][01a] Opening peer01 session")
     peer01 = zenoh.open(conf)
 
     # connect peer
     conf = zenoh.Config()
     conf.insert_json5("connect/endpoints", json.dumps(endpoints))
     conf.insert_json5("scouting/multicast/enabled", "false")
-    print("[  ][02a] Opening peer02 session");
+    print("[  ][02a] Opening peer02 session")
     peer02 = zenoh.open(conf)
 
     return (peer01, peer02)
 
 
-def close_session(peer01: Session, peer02: Session):
-    print("[  ][01e] Closing peer01 session");
+def close_session(peer01: Session, peer02: Session) -> None:
+    print("[  ][01e] Closing peer01 session")
     peer01.close()
-    print("[  ][02e] Closing peer02 session");
+    print("[  ][02e] Closing peer02 session")
     peer02.close()
 
 
-def run_session_qryrep(peer01: Session, peer02: Session):
+def run_session_qryrep(peer01: Session, peer02: Session) -> None:
     keyexpr = "test/session"
 
     for size in MSG_SIZE:
@@ -42,12 +42,12 @@ def run_session_qryrep(peer01: Session, peer02: Session):
         num_replies = 0
         num_errors = 0
 
-        def queryable_callback(query: Query):
+        def queryable_callback(query: Query) -> None:
             nonlocal num_requests
             query.reply(Sample(keyexpr, bytes(size)))
             num_requests += 1
 
-        print("[QR][01c] Queryable on peer01 session");
+        print("[QR][01c] Queryable on peer01 session")
         queryable = peer01.declare_queryable(
             keyexpr,
             queryable_callback,
@@ -56,7 +56,7 @@ def run_session_qryrep(peer01: Session, peer02: Session):
 
         time.sleep(SLEEP)
 
-        print(f"[QR][02c] Getting on peer02 session. {MSG_COUNT} msgs.");
+        print(f"[QR][02c] Getting on peer02 session. {MSG_COUNT} msgs.")
         for _ in range(MSG_COUNT):
             replies = peer02.get(keyexpr, zenoh.Queue())
             for reply in replies.receiver:
@@ -72,23 +72,23 @@ def run_session_qryrep(peer01: Session, peer02: Session):
                     num_errors += 1
 
         time.sleep(SLEEP)
-        print(f"[QR][02c] Got on peer02 session. {num_replies}/{MSG_COUNT} msgs.");
+        print(f"[QR][02c] Got on peer02 session. {num_replies}/{MSG_COUNT} msgs.")
         assert num_replies == MSG_COUNT
         assert num_requests == MSG_COUNT
         assert num_errors == 0
 
-        print("[QR][03c] Unqueryable on peer01 session");
+        print("[QR][03c] Unqueryable on peer01 session")
         queryable.undeclare()
 
 
-def run_session_pubsub(peer01: Session, peer02: Session):
+def run_session_pubsub(peer01: Session, peer02: Session) -> None:
     keyexpr = "test_pub/session"
-    msg = 'Pub Message'.encode()
+    msg = b"Pub Message"
 
     num_received = 0
     num_errors = 0
 
-    def sub_callback(sample: Sample):
+    def sub_callback(sample: Sample) -> None:
         nonlocal num_received
         nonlocal num_errors
         if sample.key_expr != keyexpr \
@@ -98,7 +98,7 @@ def run_session_pubsub(peer01: Session, peer02: Session):
             num_errors += 1
         num_received += 1
 
-    print("[PS][01d] Publisher on peer01 session");
+    print("[PS][01d] Publisher on peer01 session")
     publisher = peer01.declare_publisher(
         keyexpr,
         Priority.DATA_HIGH(),
@@ -110,34 +110,34 @@ def run_session_pubsub(peer01: Session, peer02: Session):
     subscriber = peer02.declare_subscriber(keyexpr, sub_callback)
     time.sleep(SLEEP)
 
-    for _ in range(0, MSG_COUNT):
-        publisher.put('Pub Message')
+    for _ in range(MSG_COUNT):
+        publisher.put("Pub Message")
 
     time.sleep(SLEEP)
-    print(f"[PS][02d] Received on peer02 session. {num_received}/{MSG_COUNT} msgs.");
+    print(f"[PS][02d] Received on peer02 session. {num_received}/{MSG_COUNT} msgs.")
     assert num_received == MSG_COUNT
     assert num_errors == 0
 
-    print("[PS][03d] Undeclare publisher on peer01 session");
+    print("[PS][03d] Undeclare publisher on peer01 session")
     publisher.undeclare()
-    print("[PS][04d] Undeclare subscriber on peer02 session");
+    print("[PS][04d] Undeclare subscriber on peer02 session")
     subscriber.undeclare()
 
 
-def run_session_attachment(peer01, peer02):
+def run_session_attachment(peer01, peer02) -> None:
     keyexpr = "test_attachment/session"
 
-    last_sample: Optional[Sample] = None
+    last_sample: Sample | None = None
 
-    def callback(sample: Sample):
+    def callback(sample: Sample) -> None:
         nonlocal last_sample
         last_sample = sample
 
-    print("[A][01d] Publisher on peer01 session");
+    print("[A][01d] Publisher on peer01 session")
     publisher = peer01.declare_publisher(keyexpr)
     time.sleep(SLEEP)
 
-    print("[A][02d] Publisher on peer01 session");
+    print("[A][02d] Publisher on peer01 session")
     subscriber = peer02.declare_subscriber(keyexpr, callback)
     time.sleep(SLEEP)
 
@@ -162,13 +162,13 @@ def run_session_attachment(peer01, peer02):
     time.sleep(SLEEP)
     assert dict(last_sample.attachment) == {b"key": b"value"}
 
-    print("[A][03d] Undeclare publisher on peer01 session");
+    print("[A][03d] Undeclare publisher on peer01 session")
     publisher.undeclare()
-    print("[A][04d] Undeclare subscriber on peer02 session");
+    print("[A][04d] Undeclare subscriber on peer02 session")
     subscriber.undeclare()
 
 
-def test_session():
+def test_session() -> None:
     zenoh.init_logger()
     (peer01, peer02) = open_session(["tcp/127.0.0.1:17447"])
     run_session_qryrep(peer01, peer02)

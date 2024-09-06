@@ -92,7 +92,7 @@ if args.listen is not None:
 
 
 # Zenoh code  --- --- --- --- --- --- --- --- --- --- ---
-def main():
+def main() -> None:
     # initiate logging
     zenoh.init_logger()
 
@@ -104,7 +104,7 @@ def main():
         "test/ping",
         congestion_control=zenoh.CongestionControl.BLOCK(),
     )
-    data = bytes(i % 10 for i in range(0, args.payload_size))
+    data = bytes(i % 10 for i in range(args.payload_size))
 
     print(f"Warming up for {args.warmup}...")
     warmup_end = time.time() + args.warmup

@@ -11,46 +11,44 @@
 # Contributors:
 #   ZettaScale Zenoh Team, <zenoh@zettascale.tech>
 #
-from typing import Union, Any, List
+from typing import Any
 
-from .zenoh import _Session, _Config, _Publisher, _Subscriber, _PullSubscriber
-
-from .keyexpr import KeyExpr, IntoKeyExpr, Selector, IntoSelector
+from .closures import Handler, IntoHandler, Receiver
 from .config import Config
-from .closures import IntoHandler, Handler, Receiver
 from .enums import *
-from .value import IntoValue, Value, Sample, Reply, ZenohId, IntoAttachment, Attachment
-from .queryable import Queryable, Query
+from .keyexpr import IntoKeyExpr, IntoSelector, KeyExpr, Selector
+from .queryable import Query, Queryable
+from .value import Attachment, IntoAttachment, IntoValue, Reply, Sample, Value, ZenohId
+from .zenoh import _Config, _Publisher, _PullSubscriber, _Session, _Subscriber
 
 
 class Publisher:
-    "Use ``Publisher`` (constructed with ``Session.declare_publisher``) when you want to send values often for the same key expression, as declaring them informs Zenoh that this is you intent, and optimizations will be set up to do so."
+    """Use ``Publisher`` (constructed with ``Session.declare_publisher``) when you want to send values often for the same key expression, as declaring them informs Zenoh that this is you intent, and optimizations will be set up to do so."""
 
-    def __init__(self, p: _Publisher):
+    def __init__(self, p: _Publisher) -> None:
         self._inner_ = p
 
-    def put(self, value: IntoValue, encoding: Encoding = None, attachment: IntoAttachment = None):
-        "An optimised version of ``session.put(self.key_expr, value, encoding=encoding, attachment=attachment)``"
+    def put(self, value: IntoValue, encoding: Encoding = None, attachment: IntoAttachment = None) -> None:
+        """An optimised version of ``session.put(self.key_expr, value, encoding=encoding, attachment=attachment)``."""
         attachment = Attachment(attachment) if attachment is not None else attachment
         self._inner_.put(Value(value, encoding), attachment)
 
-    def delete(self):
-        "An optimised version of ``session.delete(self.key_expr)``"
+    def delete(self) -> None:
+        """An optimised version of ``session.delete(self.key_expr)``."""
         self._inner_.delete()
 
     @property
     def key_expr(self) -> KeyExpr:
-        "This ``Publisher``'s key expression"
+        """This ``Publisher``'s key expression."""
         return KeyExpr(self._inner_.key_expr)
 
-    def undeclare(self):
-        "Stops the publisher."
+    def undeclare(self) -> None:
+        """Stops the publisher."""
         self._inner_ = None
 
 
 class Subscriber:
-    """
-    A handle to a subscription.
+    """A handle to a subscription.
 
     Its main purpose is to keep the subscription active as long as it exists.
 
@@ -58,18 +56,17 @@ class Subscriber:
     through ``self.receiver``.
     """
 
-    def __init__(self, s: _Subscriber, receiver=None):
+    def __init__(self, s: _Subscriber, receiver=None) -> None:
         self._subscriber_ = s
         self.receiver = receiver
 
-    def undeclare(self):
-        "Undeclares the subscription"
+    def undeclare(self) -> None:
+        """Undeclares the subscription."""
         self._subscriber_ = None
 
 
 class PullSubscriber:
-    """
-    A handle to a pull subscription.
+    """A handle to a pull subscription.
 
     Its main purpose is to keep the subscription active as long as it exists.
 
@@ -79,30 +76,28 @@ class PullSubscriber:
     Calling ``self.pull()`` will prompt the Zenoh network to send a new sample when available.
     """
 
-    def __init__(self, s: _PullSubscriber, receiver=None):
+    def __init__(self, s: _PullSubscriber, receiver=None) -> None:
         self._subscriber_ = s
         self.receiver = receiver
 
-    def pull(self):
-        """
-        Prompts the Zenoh network to send a new sample if available.
+    def pull(self) -> None:
+        """Prompts the Zenoh network to send a new sample if available.
         Note that this sample will not be returned by this function, but provided to the handler's callback.
         """
         self._subscriber_.pull()
 
-    def undeclare(self):
-        "Undeclares the subscription"
+    def undeclare(self) -> None:
+        """Undeclares the subscription."""
         self._subscriber_ = None
 
 
 class Session(_Session):
-    """
-    A Zenoh Session, the core interraction point with a Zenoh network.
+    """A Zenoh Session, the core interraction point with a Zenoh network.
 
     Note that most applications will only need a single instance of ``Session``. You should _never_ construct one session per publisher/subscriber, as this will significantly increase the size of your Zenoh network, while preventing potential locality-based optimizations.
     """
 
-    def __new__(cls, config: Union[Config, Any] = None):
+    def __new__(cls, config: Config | Any = None):
         if config is None:
             return super().__new__(cls)
         elif isinstance(config, _Config):
@@ -113,8 +108,7 @@ class Session(_Session):
     def put(self, keyexpr: IntoKeyExpr, value: IntoValue, encoding=None,
             priority: Priority = None, congestion_control: CongestionControl = None,
             sample_kind: SampleKind = None, attachment: IntoAttachment = None):
-        """
-        Sends a value over Zenoh.
+        """Sends a value over Zenoh.
 
         Subscribers on an expression that intersect with ``keyexpr`` will receive the sample.
         Storages will store the value if ``keyexpr`` is non-wild, or update the values for all known keys that are included in ``keyexpr`` if it is wild.
@@ -134,15 +128,15 @@ class Session(_Session):
         """
         value = Value(value, encoding)
         keyexpr = KeyExpr(keyexpr)
-        kwargs = dict()
+        kwargs = {}
         if priority is not None:
-            kwargs['priority'] = priority
+            kwargs["priority"] = priority
         if congestion_control is not None:
-            kwargs['congestion_control'] = congestion_control
+            kwargs["congestion_control"] = congestion_control
         if sample_kind is not None:
-            kwargs['sample_kind'] = sample_kind
+            kwargs["sample_kind"] = sample_kind
         if attachment is not None:
-            kwargs['attachment'] = Attachment(attachment)
+            kwargs["attachment"] = Attachment(attachment)
         return super().put(keyexpr, value, **kwargs)
 
     def config(self) -> Config:
@@ -156,9 +150,8 @@ class Session(_Session):
     def delete(self, keyexpr: IntoKeyExpr,
                priority: Priority = None, congestion_control: CongestionControl = None,
                attachment: IntoAttachment = None):
-        """
-        Deletes the values associated with the keys included in ``keyexpr``.
-        
+        """Deletes the values associated with the keys included in ``keyexpr``.
+
         This uses the same mechanisms as ``session.put``, and will be received by subscribers.
         This operation is especially useful with storages.
 
@@ -174,20 +167,19 @@ class Session(_Session):
         >>> s.delete('key/expression')
         """
         keyexpr = KeyExpr(keyexpr)
-        kwargs = dict()
+        kwargs = {}
         if priority is not None:
-            kwargs['priority'] = priority
+            kwargs["priority"] = priority
         if congestion_control is not None:
-            kwargs['congestion_control'] = congestion_control
+            kwargs["congestion_control"] = congestion_control
         if attachment is not None:
-            kwargs['attachment'] = Attachment(attachment)
+            kwargs["attachment"] = Attachment(attachment)
         return super().delete(keyexpr, **kwargs)
 
     def get(self, selector: IntoSelector, handler: IntoHandler[Reply, Any, Receiver],
             consolidation: QueryConsolidation = None, target: QueryTarget = None, value: IntoValue = None,
-            attachment: IntoAttachment = None, timeout: float = None) -> Receiver:
-        """
-        Emits a query, which queryables with intersecting selectors will be able to reply to.
+            attachment: IntoAttachment = None, timeout: float | None = None) -> Receiver:
+        """Emits a query, which queryables with intersecting selectors will be able to reply to.
 
         The replies are provided to the given `handler` as instances of the `Reply` class.
         The `handler` can typically be a queue, a single callback or a pair of callbacks.
@@ -231,7 +223,7 @@ class Session(_Session):
         ...         print("No more replies")))
         """
         handler = Handler(handler, lambda x: Reply(x))
-        kwargs = dict()
+        kwargs = {}
         if consolidation is not None:
             kwargs["consolidation"] = consolidation
         if target is not None:
@@ -250,13 +242,13 @@ class Session(_Session):
 
         This function returns an optimized representation of the passed ``keyexpr``.
 
-        It is generally not needed to declare key expressions, as declaring a subscriber, 
+        It is generally not needed to declare key expressions, as declaring a subscriber,
         a queryable, or a publisher will also inform Zenoh of your intent to use their
         key expressions repeatedly.
         """
         return KeyExpr(super().declare_keyexpr(KeyExpr(keyexpr)))
 
-    def declare_queryable(self, keyexpr: IntoKeyExpr, handler: IntoHandler[Query, Any, Any], complete: bool = None):
+    def declare_queryable(self, keyexpr: IntoKeyExpr, handler: IntoHandler[Query, Any, Any], complete: bool | None = None):
         """Declares a queryable, which will receive queries intersecting with ``keyexpr``.
 
         These queries are passed to the `handler` as instances of the `Query` class.
@@ -287,16 +279,15 @@ class Session(_Session):
         This is because as soon as a value is no longer referenced in Python, that value's destructor will run, which will undeclare your queryable, stopping it immediately.
         """
         handler = Handler(handler, lambda x: Query(x))
-        kwargs = dict()
+        kwargs = {}
         if complete is not None:
-            kwargs['complete'] = complete
+            kwargs["complete"] = complete
         inner = super().declare_queryable(KeyExpr(keyexpr), handler.closure, **kwargs)
         return Queryable(inner, handler.receiver)
 
     def declare_publisher(self, keyexpr: IntoKeyExpr, priority: Priority = None,
                           congestion_control: CongestionControl = None):
-        """
-        Declares a publisher, which may be used to send values repeatedly onto a same key expression.
+        """Declares a publisher, which may be used to send values repeatedly onto a same key expression.
 
         Written resources that match the given key will only be sent on the network
         if matching subscribers exist in the system.
@@ -313,17 +304,16 @@ class Session(_Session):
         >>> pub = s.declare_publisher('key/expression')
         >>> pub.put('value')
         """
-        kwargs = dict()
+        kwargs = {}
         if priority is not None:
-            kwargs['priority'] = priority
+            kwargs["priority"] = priority
         if congestion_control is not None:
-            kwargs['congestion_control'] = congestion_control
+            kwargs["congestion_control"] = congestion_control
         return Publisher(super().declare_publisher(KeyExpr(keyexpr), **kwargs))
 
     def declare_subscriber(self, keyexpr: IntoKeyExpr, handler: IntoHandler[Sample, Any, Any],
                            reliability: Reliability = None) -> Subscriber:
-        """
-        Declares a subscriber, which will receive any published sample with a key expression intersecting ``keyexpr``.
+        """Declares a subscriber, which will receive any published sample with a key expression intersecting ``keyexpr``.
 
         These samples are provided to the `handler` as instances of the `Sample` class.
         The `handler` can typically be a queue or a callback.
@@ -355,16 +345,15 @@ class Session(_Session):
         This is because as soon as a value is no longer referenced in Python, that value's destructor will run, which will undeclare your subscriber, deactivating the subscription immediately.
         """
         handler = Handler(handler, lambda x: Sample._upgrade_(x))
-        kwargs = dict()
+        kwargs = {}
         if reliability is not None:
-            kwargs['reliability'] = reliability
+            kwargs["reliability"] = reliability
         s = super().declare_subscriber(KeyExpr(keyexpr), handler.closure, **kwargs)
         return Subscriber(s, handler.receiver)
 
     def declare_pull_subscriber(self, keyexpr: IntoKeyExpr, handler: IntoHandler[Sample, Any, Any],
                                 reliability: Reliability = None) -> PullSubscriber:
-        """
-        Declares a pull-mode subscriber, which will receive a single published sample with a key expression intersecting ``keyexpr`` any time its ``pull`` method is called.
+        """Declares a pull-mode subscriber, which will receive a single published sample with a key expression intersecting ``keyexpr`` any time its ``pull`` method is called.
 
         These samples are passed to the `handler`'s closure as instances of the `Sample` class.
         The `handler` can typically be a queue or a callback.
@@ -385,36 +374,35 @@ class Session(_Session):
         >>> sub.pull()
         """
         handler = Handler(handler, lambda x: Sample._upgrade_(x))
-        kwargs = dict()
+        kwargs = {}
         if reliability is not None:
-            kwargs['reliability'] = reliability
+            kwargs["reliability"] = reliability
         s = super().declare_pull_subscriber(KeyExpr(keyexpr), handler.closure, **kwargs)
         return PullSubscriber(s, handler.receiver)
 
-    def close(self):
+    def close(self) -> None:
         """Attempts to close the Session.
-        
+
         The session will only be closed if all publishers, subscribers and queryables based on it have been undeclared, and there are no more python references to it.
         """
-        pass
 
     def info(self):
-        "Returns an accessor for informations about this Session"
+        """Returns an accessor for informations about this Session."""
         return Info(self)
 
 
 class Info:
-    def __init__(self, session: _Session):
+    def __init__(self, session: _Session) -> None:
         self.session = session
 
     def zid(self) -> ZenohId:
-        "Returns this Zenoh Session's identifier"
+        """Returns this Zenoh Session's identifier."""
         return ZenohId._upgrade_(self.session.zid())
 
-    def routers_zid(self) -> List[ZenohId]:
-        "Returns the neighbooring routers' identifiers"
+    def routers_zid(self) -> list[ZenohId]:
+        """Returns the neighbooring routers' identifiers."""
         return [ZenohId._upgrade_(id) for id in self.session.routers_zid()]
 
-    def peers_zid(self) -> List[ZenohId]:
-        "Returns the neighbooring peers' identifiers"
+    def peers_zid(self) -> list[ZenohId]:
+        """Returns the neighbooring peers' identifiers."""
         return [ZenohId._upgrade_(id) for id in self.session.peers_zid()]
